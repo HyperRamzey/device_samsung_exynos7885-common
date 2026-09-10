@@ -1,5 +1,7 @@
 # hwc3/gralloc must precede SurfaceFlinger (class core animation), not class hal
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/zzz-early-adb.rc:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/init/zzz-early-adb.rc
+
 
 #
 # SPDX-FileCopyrightText: 2025 The LineageOS Project

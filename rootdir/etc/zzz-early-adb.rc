@@ -1,0 +1,7 @@
+# Early adb: bring up the USB gadget for adb from init when debuggable, so a
+# hung or slow system_server cannot block device diagnosis (USB config in a
+# normal boot is driven by system_server UsbService late in boot).
+# The device usb rc keys everything off sys.usb.config=adb (starts adbd +
+# wires the UDC); this trigger fires as soon as `on boot` sets configfs=2.
+on property:sys.usb.configfs=2 && property:ro.debuggable=1
+    setprop sys.usb.config adb
