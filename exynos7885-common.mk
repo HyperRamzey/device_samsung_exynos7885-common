@@ -1,3 +1,7 @@
+# hwc3/gralloc must precede SurfaceFlinger (class core animation), not class hal
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/init/hwc3-early.rc:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/init/hwc3-early.rc
+
 #
 # SPDX-FileCopyrightText: 2025 The LineageOS Project
 # SPDX-License-Identifier: Apache-2.0
