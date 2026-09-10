@@ -40,5 +40,7 @@ def AddFlash(info, basename, dest):
 def OTA_InstallEnd(info):
   AddImage(info, "RADIO", "dtb.img", "/dev/block/by-name/dtb")
   AddImage(info, "IMAGES", "dtbo.img", "/dev/block/by-name/dtbo")
-  AddFlash(info, "recovery.img", "/dev/block/by-name/recovery")
+  # Do NOT flash recovery in the OTA: OrangeFox is the retained recovery
+    # (AOSP recovery is non-booting on this device). AddFlash(info, "recovery.img",
+    # "/dev/block/by-name/recovery")
   return
