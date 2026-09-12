@@ -1,0 +1,15 @@
+# Stock A307FNXXS4CWH1 vaultkeeperd behaviors beyond the slsi base policy:
+# - /efs/vk dedicated type + typetransition (stock-exact; avoids generic efs creates)
+type vaultkeeper_efs_file, file_type;
+allow vaultkeeperd efs_file:dir create_dir_perms;
+type_transition vaultkeeperd efs_file:dir vaultkeeper_efs_file "vk";
+allow vaultkeeperd vaultkeeper_efs_file:dir create_dir_perms;
+allow vaultkeeperd vaultkeeper_efs_file:file create_file_perms;
+# - rild/cass connect to vk socket
+allow rild vaultkeeperd:unix_stream_socket connectto;
+allow cass vaultkeeperd:unix_stream_socket connectto;
+# - binder calls into the vk HAL (system_server + rild are stock clients)
+binder_call(system_server, vaultkeeperd)
+binder_call(rild, vaultkeeperd)
+# - tee data (key storage)
+r_dir_file(vaultkeeperd, tee_vendor_data_file)

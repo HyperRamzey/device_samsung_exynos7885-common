@@ -126,3 +126,12 @@ vendor/tee/00000000-0000-0000-0000-656e676d6f64
 vendor/tee/00000000-0000-0000-0000-657365636f6d
 vendor/tee/00000000-0000-0000-0000-6d73745f5441
 vendor/tee/ffffffff-0000-0000-0000-000000000030
+
+# CASS + VaultKeeper stack (from stock A307FNXXS4CWH1) — CP liveness protocol
+vendor/bin/cass
+vendor/bin/vaultkeeperd
+vendor/bin/vendor.samsung.hardware.security.vaultkeeper@2.0-service
+vendor/lib64/libvkmanager_vendor.so
+vendor/lib64/vendor.samsung.hardware.security.vaultkeeper@2.0.so
+vendor/etc/init/cass.rc
+vendor/etc/init/vaultkeeper_common.rc

@@ -1,0 +1,11 @@
+# Stock cass extras beyond the slsi base:
+# - dedicated prop type for vendor.security.cass.* (stock vendor_sec_cass_prop)
+vendor_internal_prop(vendor_sec_cass_prop)
+set_prop(cass, vendor_sec_cass_prop)
+# - rild socket (cass talks to rild)
+allow cass rild:unix_stream_socket connectto;
+# - kmsg write (CASS_DEBUG logging)
+allow cass kmsg_device:chr_file w_file_perms;
+# - self caps (stock: setgid setuid + block_suspend)
+allow cass self:capability setgid;
+allow cass self:capability setuid;

@@ -1,0 +1,10 @@
+# VaultKeeper HIDL service (vendor.samsung.hardware.security.vaultkeeper@2.0-service)
+# Registered by vaultkeeperd per stock sepolicy (same domain).
+type hal_vaultkeeper_server_hwservice, hwservice_manager_type;
+
+# vaultkeeperd registers the hwservice
+allow vaultkeeperd hal_vaultkeeper_server_hwservice:hwservice_manager { add find };
+# rild + cass + system clients may find it (stock allows these)
+allow rild hal_vaultkeeper_server_hwservice:hwservice_manager find;
+allow cass hal_vaultkeeper_server_hwservice:hwservice_manager find;
+hwbinder_use(vaultkeeperd)

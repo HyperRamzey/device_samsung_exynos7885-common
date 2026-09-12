@@ -55,3 +55,4 @@ vendor.ril.ims.                 u:object_r:vendor_ims_prop:s0
 # GNSS
 dev.gnss.silentlogging          u:object_r:vendor_default_prop:s0
 dev.gnss.silentloggingIssueTracker u:object_r:vendor_default_prop:s0
+vendor.security.cass.    u:object_r:vendor_sec_cass_prop:s0
