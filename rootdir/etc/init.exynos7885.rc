@@ -10,6 +10,11 @@ on early-init
 on init
     start watchdogd
 
+    # Reactivation Lock (stock init.exynos7904.rc)
+    symlink /dev/block/platform/13500000.dwmmc0/by-name/steady /dev/block/steady
+    # Google FRP solution
+    symlink /dev/block/platform/13500000.dwmmc0/by-name/persistent /dev/block/persistent
+
     # Fastcharge
     chown system radio /sys/class/sec/switch/afc_disable
 
