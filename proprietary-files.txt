@@ -135,3 +135,6 @@ vendor/lib64/libvkmanager_vendor.so
 vendor/lib64/vendor.samsung.hardware.security.vaultkeeper@2.0.so
 vendor/etc/init/cass.rc
 vendor/etc/init/vaultkeeper_common.rc
+vendor/lib64/libdsms_vendor.so
+vendor/lib64/libvkservice.so
+vendor/lib64/vendor.samsung.frameworks.security.dsms@1.0.so
