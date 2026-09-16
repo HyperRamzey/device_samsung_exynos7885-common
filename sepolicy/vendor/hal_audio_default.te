@@ -9,3 +9,5 @@ allow hal_audio_default efs_file:lnk_file read;
 
 get_prop(hal_audio_default, vendor_radio_prop)
 
+# a30s log-driven service_manager find allows (avc denials 2026-09-16)
+allow hal_audio_default hal_system_suspend_service:service_manager find;

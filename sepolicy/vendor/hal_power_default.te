@@ -10,3 +10,6 @@ w_file_recursive(hal_power_default, sysfs_battery_saver)
 
 set_prop(hal_power_default, vendor_powerhal_prop)
 
+# a30s log-driven service_manager find allows (avc denials 2026-09-16)
+allow hal_power_default hal_thermal_service:service_manager find;
+allow hal_power_default fwk_stats_service:service_manager find;
