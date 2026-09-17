@@ -563,7 +563,6 @@ on fs
 
 on property:sys.boot_completed=1
     chown root root /sys/class/sec/tsp/cmd
-    swapon_all /vendor/etc/fstab.enableswap
     setprop vendor.powerhal.init 1
 
 # Permission for flashlight control for HAL3.3
