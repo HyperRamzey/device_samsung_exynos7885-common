@@ -406,6 +406,11 @@ on boot
 # Prevents permission denied error for telephony
     chmod 0644 /proc/cmdline
 
+    # zram swap (OOM fix 2026-09-18, Morphe 512MB SIGKILL): 30% of RAM via
+    # vendor/etc/fstab.enableswap. Algorithm MUST be set before swapon.
+    write /sys/block/zram0/comp_algorithm zstd
+    swapon_all /vendor/etc/fstab.enableswap
+
 on fs
     mount_all /vendor/etc/fstab.${ro.hardware} --early
     # We need to seperate mounting SEC_EFS partition from fstab file due to GSI image loading case
