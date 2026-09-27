@@ -16,4 +16,43 @@
     <!-- Whether device has a notch -->
     <bool name="config_haveNotch">true</bool>
 
+    <!--
+         Battery charge control.
+
+         The whole mechanism is already present and working on this device; it
+         merely ships disabled. Verified on device before changing anything:
+
+           dumpsys lineagehealth
+             ChargingControlController Configuration:
+               Enabled: false   Mode: 1   Limit: 80
+             Provider: ...health.ccprovider.Toggle
+
+         and the path below that is live end to end:
+
+           ChargingControlSettings -> HealthInterface
+             -> binder "lineagehealth" (HealthInterfaceService)
+             -> ChargingControlController -> Toggle.onBatteryChanged()
+             -> binder vendor.lineage.health.IChargingControl/default
+             -> ChargingControl::setChargingEnabled()
+             -> WriteStringToFile("1", "/sys/class/power_supply/battery/batt_slate_mode")
+             -> sec_battery.c: slate_mode -> SEC_BAT_CHG_MODE_BUCK_OFF
+
+         so the kernel node the HAL writes does exist here (batt_slate_mode, 0664,
+         u:object_r:sysfs_battery_writable:s0), and the HAL process runs and is
+         VINTF-registered. Enabling it therefore needs no kernel change at all.
+    -->
+    <bool name="config_chargingControlEnabled">true</bool>
+
+    <!--
+         Stop charging at the limit, and restart at (limit - margin).
+
+         The stock margin is 10, which on this Toggle provider means the pack
+         oscillates between the limit and ten percent below it: 80% -> 70% -> 80%
+         indefinitely. That is not hypothetical - it is upstream LineageOS issue
+         8115, reported on guacamole/lineage-21, and it is the default behaviour
+         here. A margin of 3 keeps the same protection (the pack is never charged
+         past the limit) while cutting the visible swing to three points.
+    -->
+    <integer name="config_chargingControlBatteryRechargeMargin">3</integer>
+
 </resources>
