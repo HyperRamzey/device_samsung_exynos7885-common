@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+prebuilt {
+    name: "slate_perm.sh",
+    src: "vendor/bin/slate_perm.sh",
+    vendor: true,
+    required: ["slate_perm.sh"],
+}
+
 prebuilt_etc {
     name: "fstab.exynos7884B",
     src: "etc/fstab.exynos7885",

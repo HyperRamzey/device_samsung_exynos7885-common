@@ -55,4 +55,23 @@
     -->
     <integer name="config_chargingControlBatteryRechargeMargin">3</integer>
 
+    <!--
+         Default mode must be MODE_LIMIT (3), not the framework default of
+         MODE_AUTO (1).
+
+         MODE_AUTO is a *time window* mode: it derives a stop time from the next
+         alarm clock and never consults a percentage. With no alarm set it does
+         nothing at all, and says so:
+
+           I/LineageHealth: Current time is 20:26
+           W/LineageHealth: No alarm found, auto charging control has no effect
+
+         Only the mode == MODE_LIMIT branch actually applies the percentage
+         ceiling, via mCurrentProvider.update(mBatteryPct, limit). Confirmed on
+         device: switching the persisted mode to 3 immediately produced
+         "Current battery level: 100.0, target: 80, limit set: true", whereas
+         mode 1 never set the limit at all.
+    -->
+    <integer name="config_defaultChargingControlMode">3</integer>
+
 </resources>

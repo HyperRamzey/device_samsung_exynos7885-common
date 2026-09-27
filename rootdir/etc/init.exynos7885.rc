@@ -586,3 +586,17 @@ service watchdogd /system/bin/watchdogd 10 20
     class core
     user root
     seclabel u:r:watchdogd:s0
+
+# LineageOS battery charge control. vendor.lineage.health-service.default runs as
+# user:system and is the only writer of batt_slate_mode, but the kernel creates
+# that node root:root 0664, so the write failed with EACCES and the HAL reported
+# it as EX_UNSUPPORTED_OPERATION - charge control looked enabled and did nothing.
+# The script retries because the battery driver probes after init.
+service slate_perm /vendor/bin/slate_perm.sh
+    class core
+    user root
+    group root
+    oneshot
+
+on property:sys.boot_completed=1
+    start slate_perm
