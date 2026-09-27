@@ -40,13 +40,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/privapp-permissions-me.phh.ims.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-me.phh.ims.xml
 
-# LineageOS battery charge control needs to hand batt_slate_mode to system:system;
-# see rootdir/vendor/bin/slate_perm.sh and the service in
-# rootdir/etc/init.exynos7885.rc. Done as a copy rather than a prebuilt module
-# because the "prebuilt" module type is not available in rootdir/ Android.bp.
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/vendor/bin/slate_perm.sh:$(TARGET_COPY_OUT_VENDOR)/bin/slate_perm.sh
-
 PRODUCT_PACKAGES += \
     android.hardware.audio@7.0-impl:32 \
     android.hardware.audio.effect@7.0-impl:32 \

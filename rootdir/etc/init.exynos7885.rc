@@ -568,6 +568,25 @@ on fs
 
 on property:sys.boot_completed=1
     chown root root /sys/class/sec/tsp/cmd
+    # LineageOS battery charge control: vendor.lineage.health-service.default runs
+    # as user:system and is the only writer of batt_slate_mode, via
+    # ChargingControl::setChargingEnabled() -> WriteStringToFile(). The kernel
+    # creates that node root:root 0664, so uid 1000 lands in "other" with r--, the
+    # write returns EACCES, and the HAL reports EX_UNSUPPORTED_OPERATION - charge
+    # control looks enabled and silently does nothing:
+    #     I/LineageHealth: Current battery level: 100.0, target: 80, limit set: true
+    #     E/LineageHealth: Failed to set charging enabled
+    # The SELinux label is already correct (sysfs_battery_writable), so this is
+    # purely a uid/gid problem.
+    #
+    # This is an init chown action rather than a helper script on purpose. A
+    # service would have to exec a file, and a file installed into /vendor/bin
+    # comes out labelled u:object_r:vendor_file:s0, which init refuses to run:
+    #     File /vendor/bin/slate_perm.sh (labeled "u:object_r:vendor_file:s0") has
+    #     incorrect label or no domain transition from u:r:init:s0
+    # init's own domain may chown these sysfs nodes directly, which the tsp/cmd
+    # line above already relies on.
+    chown system system /sys/class/power_supply/battery/batt_slate_mode
     setprop vendor.powerhal.init 1
 
 # Permission for flashlight control for HAL3.3
@@ -586,17 +605,3 @@ service watchdogd /system/bin/watchdogd 10 20
     class core
     user root
     seclabel u:r:watchdogd:s0
-
-# LineageOS battery charge control. vendor.lineage.health-service.default runs as
-# user:system and is the only writer of batt_slate_mode, but the kernel creates
-# that node root:root 0664, so the write failed with EACCES and the HAL reported
-# it as EX_UNSUPPORTED_OPERATION - charge control looked enabled and did nothing.
-# The script retries because the battery driver probes after init.
-service slate_perm /vendor/bin/slate_perm.sh
-    class core
-    user root
-    group root
-    oneshot
-
-on property:sys.boot_completed=1
-    start slate_perm
