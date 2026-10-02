@@ -13,3 +13,18 @@ binder_call(system_server, vaultkeeperd)
 binder_call(rild, vaultkeeperd)
 # - tee data (key storage)
 r_dir_file(vaultkeeperd, tee_vendor_data_file)
+
+# - read the hwservicemanager boot-state flags.
+#   vaultkeeperd polls hwservicemanager.ready in a 1s loop at startup. Nothing in
+#   the policy granted it that read, so the poll never succeeded and the HAL
+#   looped forever. Measured cost of the missing rule, steady state:
+#     180 x/90s  W/libc: Access denied finding property "hwservicemanager.ready"
+#      90 x/90s  W/libc: Access denied finding property "hwservicemanager.disabled"
+#      90 x/90s  W/vaultkeeper: Waited for hwservicemanager.ready for a second
+#   ~20% of all main-buffer logcat traffic, and a service spinning forever.
+#   The property exists and IS set (hwservicemanager.ready=true), so this is a
+#   policy gap, not a missing property.
+#   hwservicemanager. is labelled hwservicemanager_prop by
+#   system/sepolicy/private/property_contexts:266. get_prop is read-only and
+#   grants nothing beyond observing that the HAL service manager has started.
+get_prop(vaultkeeperd, hwservicemanager_prop)
