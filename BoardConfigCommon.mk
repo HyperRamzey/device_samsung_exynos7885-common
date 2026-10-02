@@ -63,6 +63,30 @@ BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOTIMG_HEADER_VERSION)
 TARGET_KERNEL_SOURCE := kernel/samsung/exynos7885
 TARGET_KERNEL_NO_GCC := true
 
+# Tool pinning for the kernel make invocation.
+#
+# TARGET_KERNEL_NO_GCC=true makes vendor/lineage/build/tasks/kernel.mk skip its
+# LLVM branch, so kernel/Makefile resolves
+#     OBJCOPY ?= $(CROSS_COMPILE)objcopy
+# and CROSS_COMPILE is not passed on the a30s (the CLANG_TRIPLE a few lines up
+# below is what selects clang). That leaves OBJCOPY naming a binary that is not
+# on PATH, and because arch/arm64/boot/Makefile now genuinely RUNS its objcopy
+# (it used to be skipped by if_changed), the build died with:
+#     OBJCOPY arch/arm64/boot/Image
+#     make[2]: OBJCOPY: No such file or directory        (Error 127)
+#
+# Pass the llvm binutils explicitly, next to CLANG_TRIPLE, so the objcopy is
+# found. Verified: with OBJCOPY set, kernel make -p resolves it to
+# /root/toolchains/bin/llvm-objcopy; without it, aarch64-linux-gnu-objcopy.
+TARGET_KERNEL_CLANG_PATH := /root/toolchains
+TARGET_KERNEL_ADDITIONAL_FLAGS := CLANG_TRIPLE=aarch64-linux-gnu-
+TARGET_KERNEL_ADDITIONAL_FLAGS += CROSS_COMPILE=aarch64-linux-gnu-
+TARGET_KERNEL_ADDITIONAL_FLAGS += OBJCOPY=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-objcopy
+TARGET_KERNEL_ADDITIONAL_FLAGS += OBJDUMP=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-objdump
+TARGET_KERNEL_ADDITIONAL_FLAGS += NM=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-nm
+TARGET_KERNEL_ADDITIONAL_FLAGS += AR=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-ar
+TARGET_KERNEL_ADDITIONAL_FLAGS += STRIP=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-strip
+
 # Keymaster
 $(call soong_config_set,samsungVars,target_keymaster4_library,//vendor/samsung/exynos7885-common:libskeymaster4device)
 
