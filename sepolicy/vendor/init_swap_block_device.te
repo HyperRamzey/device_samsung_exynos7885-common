@@ -1,0 +1,20 @@
+# zram backing_dev: let init open the swap partition read-write.
+#
+# backing_dev_store() in drivers/block/zram/zram_drv.c does
+#
+#     backing_dev = filp_open(file_name, O_RDWR|O_LARGEFILE, 0);
+#
+# and that failure branch has no pr_info, so the only trace of a denial is
+# init's own "took 0ms and failed: ... Permission denied". Measured on the
+# ab109ee build at init.exynos7904.rc:490.
+#
+# The node itself is healthy: u:object_r:swap_block_device:s0, brw------- root
+# root, and openable for both read and write from u:r:ksu:s0. Only the
+# u:r:init:s0 domain is refused, so this grants init exactly that access.
+#
+# Re-asserted locally because system/sepolicy/private/init.te carries
+# `allow init swap_block_device:blk_file rw_file_perms;` but that grant is not
+# present in the policy in force on this build, and this device previously
+# contributed no BOARD_SEPOLICY_M4DEFS at all.
+allow init swap_block_device:blk_file rw_file_perms;
+allow init swap_block_device:file rw_file_perms;

@@ -164,3 +164,9 @@ BOARD_HOSTAPD_DRIVER             := NL80211
 BOARD_HOSTAPD_PRIVATE_LIB        := lib_driver_cmd_$(BOARD_WLAN_DEVICE)
 WIFI_HIDL_FEATURE_DUAL_INTERFACE := true
 WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY := true
+
+# zram backing_dev: init must open the swap partition O_RDWR. See
+# sepolicy/vendor/init_swap_block_device.te for the measurement.
+BOARD_SEPOLICY_M4DEFS += init_swap_block_device.te
+BOARD_SEPOLICY_M4DEFS_FILE(init_swap_block_device.te) := \
+    device/samsung/exynos7885-common/sepolicy/vendor/init_swap_block_device.te
