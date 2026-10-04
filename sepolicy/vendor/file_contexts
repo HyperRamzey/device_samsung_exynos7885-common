@@ -29,6 +29,34 @@
 
 # blocks
 /dev/block/zram0                                            u:object_r:swap_block_device:s0
+# p33 is the repartition's zram backing store, created by
+# hm_mod/Repartitioner-a30s-4000MiB.zip (GPT number 33, name 'swap', 800 MiB).
+#
+# Without this it falls through to the generic catch-all
+#   system/sepolicy/private/file_contexts:104  /dev/block(/.*)?  block_device
+# and init cannot open it. init.te:747 grants
+#   allow init swap_block_device:blk_file rw_file_perms;
+# but there is no allow for block_device:blk_file open/write anywhere, and
+# domain.te:744 neverallows exactly that for every domain except
+# kernel/init/recovery - init is exempt from the neverallow but still has no
+# allow of its own.
+#
+# Measured 2026-10-04, dmesg at 14.453796:
+#   init: Command 'write /sys/block/zram0/backing_dev /dev/block/by-name/swap'
+#         action=boot (/vendor/etc/init/hw/init.exynos7904.rc:449) took 0ms and
+#         failed: Unable to write to file '/sys/block/zram0/backing_dev':
+#         Unable to write file contents: Permission denied
+# so zram still came up (1419259904 bytes, zstd) but with backing_dev = none.
+#
+# The EACCES is raised by filp_open() INSIDE backing_dev_store()
+# (drivers/block/zram/zram_drv.c:571), not by init's own open of the sysfs
+# node - init already holds `allow init { sysfs_zram }:file rw_file_perms`
+# (init.te:615-617). do_filp_open() runs the LSM file_open hook even for a
+# kernel-internal open, so init's own context is what gets checked.
+#
+# Mirrors the /dev/block/zram0 entry above and cuttlefish's
+# /dev/block/vda19 -> swap_block_device.
+/dev/block/mmcblk0p33                                       u:object_r:swap_block_device:s0
 
 /dev/block/platform/.+/by-name/(omr|OMR)?                   u:object_r:metadata_block_device:s0
 /dev/block/platform/.+/by-name/(misc|MISC)?                 u:object_r:misc_block_device:s0
