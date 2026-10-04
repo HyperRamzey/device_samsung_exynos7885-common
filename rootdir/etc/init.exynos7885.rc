@@ -65,8 +65,6 @@ on post-fs-data
 # swapon_all stays in `on boot` deliberately: it is what SETS disksize,
 # so it has to stay after these three lines.
     write /sys/block/zram0/comp_algorithm zstd
-    wait_for_partition /dev/block/by-name/swap
-    write /sys/block/zram0/backing_dev /dev/block/by-name/swap
 # NFC
     mkdir /data/vendor/nfc 0770 nfc nfc
 
@@ -483,6 +481,13 @@ on boot
     # ueventd and may not exist yet this early in `on boot`. If it is
     # absent this times out and zram still comes up, just without a
     # backing store, which is the right way to degrade.
+    # # backing_dev goes here, immediately before swapon_all
+    # wait_for_partition is deliberately NOT used here: at post-fs-data
+    # /dev/block/by-name/swap does not exist yet (the node's ctime lands
+    # later), so waiting there cost us the whole sequence. By `on boot`
+    # ueventd has long since published it. Safe against the -EBUSY gate
+    # because 6b8a5e3 removed everything that used to size zram early.
+    write /sys/block/zram0/backing_dev /dev/block/by-name/swap
     swapon_all /vendor/etc/fstab.enableswap
 
 on fs
