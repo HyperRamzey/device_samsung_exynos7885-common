@@ -1,20 +1,35 @@
-# zram backing_dev: let init open the swap partition read-write.
+# zram backing_dev: let vendor_init open the swap partition O_RDWR.
 #
-# backing_dev_store() in drivers/block/zram/zram_drv.c does
+# drivers/block/zram/zram_drv.c backing_dev_store() does
 #
 #     backing_dev = filp_open(file_name, O_RDWR|O_LARGEFILE, 0);
 #
-# and that failure branch has no pr_info, so the only trace of a denial is
-# init's own "took 0ms and failed: ... Permission denied". Measured on the
-# ab109ee build at init.exynos7904.rc:490.
+# and that branch has no pr_info, so a failure is visible only as init
+# reporting
 #
-# The node itself is healthy: u:object_r:swap_block_device:s0, brw------- root
-# root, and openable for both read and write from u:r:ksu:s0. Only the
-# u:r:init:s0 domain is refused, so this grants init exactly that access.
+#     Command 'write /sys/block/zram0/backing_dev /dev/block/by-name/swap'
+#       took 1ms and failed: Unable to write file contents: Permission denied
 #
-# Re-asserted locally because system/sepolicy/private/init.te carries
-# `allow init swap_block_device:blk_file rw_file_perms;` but that grant is not
-# present in the policy in force on this build, and this device previously
-# contributed no BOARD_SEPOLICY_M4DEFS at all.
-allow init swap_block_device:blk_file rw_file_perms;
-allow init swap_block_device:file rw_file_perms;
+# That filp_open runs in the writer's context. init.exynos7904.rc is a VENDOR
+# rc, so the writer is vendor_init (u:r:vendor_init:s0), not pid 1. Against
+# the policy actually loaded on the device (precompiled_sepolicy md5
+# 0ec9518d7fc775c17ec49dbb51615903, 858510 B, enforce=1) sesearch reports
+# vendor_init's only access to the swap node as
+#
+#     allow vendor_init swap_block_device:chr_file setattr;
+#
+# which is a chmod/chown permission, not an open. So the read-write open that
+# zram requires is refused, EACCES, with no kernel message.
+#
+# The node itself is healthy: u:object_r:swap_block_device:s0, brw-------
+# root root, and openable read+write from u:r:ksu:s0. Device cgroups are
+# ruled out (/sys/fs/bpf has no "devices" program; /proc/self/cgroup has no
+# "devices" controller), so selinux is the remaining cause.
+#
+# All three class names are granted because sesearch reports chr_file for
+# this node while blk_file is the conventional class for a block device
+# node; granting both is harmless and avoids repeating the wrong-class
+# mistake that made a84091e a no-op.
+allow vendor_init swap_block_device:chr_file rw_file_perms;
+allow vendor_init swap_block_device:blk_file rw_file_perms;
+allow vendor_init swap_block_device:file rw_file_perms;
