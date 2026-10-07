@@ -13,3 +13,6 @@ set_prop(hal_power_default, vendor_powerhal_prop)
 # a30s log-driven service_manager find allows (avc denials 2026-09-16)
 hal_client_domain(hal_power_default, hal_thermal)
 allow hal_power_default fwk_stats_service:service_manager find;
+
+# schedtune boost written by libperfmgr for INTERACTION/LAUNCH hints
+allow hal_power_default cgroup:file rw_file_perms;
