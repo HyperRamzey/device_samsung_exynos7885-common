@@ -7,12 +7,32 @@
 on property:sys.usb.configfs=2
     setprop sys.usb.config adb
 
-# Bring-up: pre-authorize the build host's adb key so adbd (secure mode)
-# accepts the connection without a UI confirmation - the RSA dialog cannot
-# be accepted while system_server is hung or during headless diagnosis.
+# Repair /data/misc/adb on upgrades from builds that shipped the
+# "pre-authorize the build host" block that used to live in this file
+# (removed; GitHub issue #2). That block ran on every boot:
+#     mkdir /data/misc/adb 0755 system system
+#     write /data/misc/adb/adb_keys <build-host key>   (O_TRUNC)
+#     chmod 644 /data/misc/adb/adb_keys
+#     chown system system /data/misc/adb/adb_keys
+# init's mkdir applies mode/owner to an EXISTING directory
+# (make_dir_with_options, system/core/init/builtins.cpp: lchown + fchmodat),
+# so the chown to system:system cleared the setgid bit and the chmod replaced
+# AOSP's `mkdir /data/misc/adb 02750 system shell` (init.usb.rc, on
+# post-fs-data) with 0755 system system. Every key the framework then saved
+# (AdbdKeyStoreStorage: AtomicFile rename + FileUtils.setPermissions(0640,
+# uid/gid unchanged)) landed as system:system 0640, which adbd cannot read:
+# on user builds adbd drops to shell:shell (ro.secure=1 ->
+# should_drop_privileges() -> minijail_change_uid/gid(AID_SHELL),
+# packages/modules/adb/daemon/main.cpp). AdbdAuthContext::IteratePublicKeys
+# (frameworks/native/libs/adbd_auth/adbd_auth.cpp) therefore never loaded
+# /data/misc/adb/adb_keys, and the adbwifi TLS verifier only trusts keys
+# adbd loaded, so every wireless connection died with CERTIFICATE_VERIFY_FAILED
+# even after a successful pairing. The O_TRUNC write also wiped every
+# authorized host key on each reboot.
+# AOSP's own mkdir already restores the directory on the fixed build; these
+# two builtins restore the keys file so existing installs heal on the first
+# boot. A missing file (fresh install) fails harmlessly: init logs the failed
+# command and continues the action.
 on property:sys.usb.configfs=2
-    mkdir /data/misc/adb 0755 system system
-    write /data/misc/adb/adb_keys QAAAAFNfQ38lw90l35TkWHADdrCgkwOsqhOz9kiCAribSPnsubGzVqyuTT46R0r4VKU0vDotpeUE7G8PTeWAKlbqnzv5bp2lHT0XzeUpdlwZG31OAkkevwxDqReBY//lOcNL+yet+YNesqc/ilc+S0hMX7lPtuITbNjNaSJ4nyi6FhV2dHxUMFe/GV1ew10XLWnctxwCQMc57XA5mTCYZxCJM9xK5eB8HBl3OtGoHwE6+16qsDoB5LuJxdToVuYl/+Jpd5G7Cfl367sGobiGrkzeWBF9lU1sIodSCPrRq4vEH36wLHvM2CPfmcfaQzjwOoEADT8biInPuWXF4ybZ8cZ9I2rykly4cysr+DafBogp408227Y9/iBZr7+o15pTeieoO8ULcEl2MNO9gXq/eNSWrVaMcXL692YPg5SRVjEYH6mwrQ47/X+M1t/AiiyHxygJf8mJT3kVHMDNnzglrYPnCKlMEwt2sCE1bAWaR/0uKeR0TZonS0+HPi5QPVEOHlZ5ajNWJ5phy9Wju0uhbtjBspnPpAhf8MHM67qGM6UqboVgkpvCKYobR2d0PhITz8vld9YyvNdRT7d3B1G5uXXv2tLaRjclxLTsvlAOz6+kuxa9sdibgFcOaZbkPmjfVxLtcbfE4ug/42CGpKSriw6lnpmz8hZjwufhOti5c0PqF2lnY+XZfwEAAQA=
-    chmod 644 /data/misc/adb/adb_keys
-    chown system system /data/misc/adb/adb_keys
-    restorecon /data/misc/adb/adb_keys
+    chown system shell /data/misc/adb/adb_keys
+    chmod 0640 /data/misc/adb/adb_keys
