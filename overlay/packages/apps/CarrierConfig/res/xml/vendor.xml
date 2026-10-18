@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    a30s CarrierConfig overlay (device tree addition).
+
+    Read after every bundled asset in packages/apps/CarrierConfig
+    (DefaultCarrierConfigService.loadConfig), so matching values here win.
+
+    carrier_volte_available_bool:
+      AOSP hardcodes the default to false (CarrierConfigManager.sDefaults,
+      frameworks/base/telephony/java/android/telephony/CarrierConfigManager.java
+      line 11104). Carriers with no bundled asset - Tele2 RU (mccmnc 25020,
+      carrier id 1028) among them - are therefore hard-disabled and
+      ImsManager.isVolteEnabledByPlatform() never asks me.phh.ims to turn the
+      MMTEL voice capability on, even though SIP registration succeeds
+      (observed on device: "Final MMTEL capabilities=8", SMS only).
+      Of the 68 bundled assets that set this key, all set true and none set
+      false, so a device-wide override cannot contradict a bundled decision -
+      it only replaces the AOSP false default.
+      PhhIms performs its own per-carrier gating at runtime; pinning platform
+      availability to true only stops the platform from hiding IMS voice.
+      Where the network/stack cannot deliver IMS voice, calls stay on CS.
+
+    Filter: device="a30s" (Build.DEVICE / ro.product.device) so the file is
+    inert if this common tree is ever reused for another device, and no
+    mcc/mnc filter so every SIM benefits, not only the carrier under test.
+    (The SIM-less path uses vendor_no_sim.xml instead - not shipped.)
+-->
+<carrier_config_list>
+    <carrier_config device="a30s">
+        <boolean name="carrier_volte_available_bool" value="true" />
+    </carrier_config>
+</carrier_config_list>
