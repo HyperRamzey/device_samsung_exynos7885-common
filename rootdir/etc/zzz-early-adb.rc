@@ -1,0 +1,38 @@
+# Early adb: bring up the USB gadget for adb from init, so a hung or slow
+# system_server cannot block device diagnosis (USB config in a normal boot
+# is driven by system_server UsbService late in boot).
+# The device usb rc keys everything off sys.usb.config=adb (starts adbd +
+# wires the UDC); this trigger fires as soon as `on boot` sets configfs=2.
+# Unconditional: bring-up builds must always be diagnosable.
+on property:sys.usb.configfs=2
+    setprop sys.usb.config adb
+
+# Repair /data/misc/adb on upgrades from builds that shipped the
+# "pre-authorize the build host" block that used to live in this file
+# (removed; GitHub issue #2). That block ran on every boot:
+#     mkdir /data/misc/adb 0755 system system
+#     write /data/misc/adb/adb_keys <build-host key>   (O_TRUNC)
+#     chmod 644 /data/misc/adb/adb_keys
+#     chown system system /data/misc/adb/adb_keys
+# init's mkdir applies mode/owner to an EXISTING directory
+# (make_dir_with_options, system/core/init/builtins.cpp: lchown + fchmodat),
+# so the chown to system:system cleared the setgid bit and the chmod replaced
+# AOSP's `mkdir /data/misc/adb 02750 system shell` (init.usb.rc, on
+# post-fs-data) with 0755 system system. Every key the framework then saved
+# (AdbdKeyStoreStorage: AtomicFile rename + FileUtils.setPermissions(0640,
+# uid/gid unchanged)) landed as system:system 0640, which adbd cannot read:
+# on user builds adbd drops to shell:shell (ro.secure=1 ->
+# should_drop_privileges() -> minijail_change_uid/gid(AID_SHELL),
+# packages/modules/adb/daemon/main.cpp). AdbdAuthContext::IteratePublicKeys
+# (frameworks/native/libs/adbd_auth/adbd_auth.cpp) therefore never loaded
+# /data/misc/adb/adb_keys, and the adbwifi TLS verifier only trusts keys
+# adbd loaded, so every wireless connection died with CERTIFICATE_VERIFY_FAILED
+# even after a successful pairing. The O_TRUNC write also wiped every
+# authorized host key on each reboot.
+# AOSP's own mkdir already restores the directory on the fixed build; these
+# two builtins restore the keys file so existing installs heal on the first
+# boot. A missing file (fresh install) fails harmlessly: init logs the failed
+# command and continues the action.
+on property:sys.usb.configfs=2
+    chown system shell /data/misc/adb/adb_keys
+    chmod 0640 /data/misc/adb/adb_keys

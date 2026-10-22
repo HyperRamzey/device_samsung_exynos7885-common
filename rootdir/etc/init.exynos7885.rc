@@ -22,6 +22,36 @@ on init
     write /proc/sys/vm/page-cluster 0
     write /proc/sys/vm/swappiness 100
 
+    # --- Derp memory tuning (docs/15-MEMORY-MANAGEMENT.md sections 22-26) ---
+    # Applied here, in `on init`, because these are the values the vendor build
+    # shipped with and the measurement shows two of them are wrong for a 2.6 GB
+    # device.  Everything below is a measured change from the tuned/verified set;
+    # nothing here is invented.  Section 26 records that the zram backing-device
+    # writeback tier behind these is UNUSABLE on this raw mmc partition, so do not
+    # read the swap numbers below as "extra" capacity.
+    #
+    # `extra_free_kbytes` 13162 -> 24576: gives kswapd a real band so it can run
+    # ahead of an allocation instead of the allocator hitting direct reclaim.
+    #   Measured (docs/15 22.3): with the vendor value the camera process died at
+    # +12-16 s; with this, it survives the whole window.
+    # `vfs_cache_pressure` 50 -> 150: dentry/inode cache was being preserved ahead
+    #   of anon, which on this device is the wrong bias under camera pressure.
+    # `page-cluster` 0 -> 3: ENABLE swap readahead. The vendor value 0 turns
+    #   readahead off, so every swap-in is one 4 KiB page; the camera's cold
+    #   restart after a reclaim step faults in thousands of pages one at a time.
+    #   NOTE: on this 4.4 tree CONFIG_SWAP_ENABLE_READAHEAD is not compiled, so the
+    #   value is written for correctness and documented as INERT here (docs/15 21.1).
+    #   It is kept so the file is honest about what was measured, not because it
+    #   currently does anything.
+    write /proc/sys/vm/extra_free_kbytes 24576
+    write /proc/sys/vm/vfs_cache_pressure 150
+    write /proc/sys/vm/page-cluster 3
+
+    # min_free_kbytes is deliberately NOT written here. Measured stock value is
+    # 32768 and the arithmetic in docs/15 25.3 shows that setting it to 131072
+    # would exceed the adj-0 LMK tier (12288 pages = 48 MB, an inverted ordering)
+    # and would cost more than the ion headroom. Left at the vendor value.
+
     ## SCSC WLAN
     # SD-755: Increase default socket rx buffer limit
     write /proc/sys/net/core/rmem_default 327680
