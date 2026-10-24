@@ -76,9 +76,10 @@ TARGET_KERNEL_NO_GCC := true
 #     make[2]: OBJCOPY: No such file or directory        (Error 127)
 #
 # Pass the llvm binutils explicitly, next to CLANG_TRIPLE, so the objcopy is
-# found. Verified: with OBJCOPY set, kernel make -p resolves it to
-# /root/toolchains/bin/llvm-objcopy; without it, aarch64-linux-gnu-objcopy.
-TARGET_KERNEL_CLANG_PATH := /root/toolchains
+# found. Portable: an exported TARGET_KERNEL_CLANG_PATH (derp_env.sh on the
+# native Arch host) wins; otherwise fall back to $(HOME)/toolchains, which is
+# /root/toolchains on WSL. The old `:= /root/toolchains` ignored the env.
+TARGET_KERNEL_CLANG_PATH ?= $(HOME)/toolchains
 TARGET_KERNEL_ADDITIONAL_FLAGS := CLANG_TRIPLE=aarch64-linux-gnu-
 TARGET_KERNEL_ADDITIONAL_FLAGS += CROSS_COMPILE=aarch64-linux-gnu-
 TARGET_KERNEL_ADDITIONAL_FLAGS += OBJCOPY=$(TARGET_KERNEL_CLANG_PATH)/bin/llvm-objcopy
@@ -170,3 +171,16 @@ WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY := true
 BOARD_SEPOLICY_M4DEFS += init_swap_block_device.te
 BOARD_SEPOLICY_M4DEFS_FILE(init_swap_block_device.te) := \
     device/samsung/exynos7885-common/sepolicy/vendor/init_swap_block_device.te
+
+# HWC soong config
+#
+# The SLSI Linaro config include near the top of this file pulls in
+# hardware/samsung_slsi-linaro/config/hwc.mk, which translates the legacy
+# BOARD_* flags into the exynos_hwc soong config that the converted
+# libhwc2.1/hwc3 Android.bp files read. That include runs before TARGET_ARCH
+# and BOARD_MINIMUM_DISPLAY_BRIGHTNESS are set below, so hwc.mk's conditions
+# for USES_ARCH_ARM64 and MINIMUM_DISPLAY_BRIGHTNESS would evaluate empty.
+# Re-include it here, once every board variable is defined; soong_config_set
+# is an idempotent assignment, so the earlier include is simply overwritten
+# with the same values plus the ones that were still unset at that point.
+include hardware/samsung_slsi-linaro/config/hwc.mk
