@@ -121,6 +121,34 @@ on post-fs-data
     mkdir /data/vendor/biometrics/fp/User_0 0700 system system
     chown system system /data/vendor/biometrics/fp/User_0
 
+# Fingerprint calibration reseed. After a /data format the meta/ tree above is
+# empty and libbauthserver never starts the sensor:
+#     readCalibDataInEFS efs/biometrics/meta/egis_calibration_data.bin isn't exist
+#     E FPBAuthService: FAIL TO GET CALIB FROM EFS
+#     E FPBAuthService: check_opcode func_ret_val error = 48   <-- sensor dead
+# The factory blob lives on the persistent EFS partition (/efs -> /factory), which
+# the HAL (uid 1000, EFS-restricted) cannot read for itself, so init copies it in
+# on every boot. cell_id is needed for the optical calibration and is read from
+# the panel's sysfs node. Unconditional overwrite is safe: the factory blob is
+# immutable and the panel never changes.
+# init builtins: copy = ReadFile+WriteFile (works on sysfs), and each chown/chmod
+# takes exactly one path. No restorecon: new files inherit the parent's label
+# (biometrics_vendor_data_file, verified live) and a wrong-cover restorecon could
+# mislabel them.
+    copy /factory/biometrics/meta/egis_calibration_data.bin /data/vendor/biometrics/meta/calib.dat
+    chown system system /data/vendor/biometrics/meta/calib.dat
+    chmod 0600 /data/vendor/biometrics/meta/calib.dat
+    copy /sys/class/lcd/panel/cell_id /data/vendor/biometrics/meta/cell_id
+    chown system system /data/vendor/biometrics/meta/cell_id
+    chmod 0600 /data/vendor/biometrics/meta/cell_id
+    copy /sys/class/lcd/panel/cell_id /data/vendor/biometrics/cell_id
+    chown system system /data/vendor/biometrics/cell_id
+    chmod 0600 /data/vendor/biometrics/cell_id
+    mkdir /data/vendor/biometrics/bk 0700 system system
+    chown system system /data/vendor/biometrics/bk
+    mkdir /data/vendor/biometrics/info/User_0 0700 system system
+    chown system system /data/vendor/biometrics/info/User_0
+
 # Log data folder
     mkdir /data/vendor 0771 root system
     mkdir /data/vendor/log 0771 root system
