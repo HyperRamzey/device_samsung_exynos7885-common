@@ -31,3 +31,10 @@ type sysfs_mmc, sysfs_type, rw_fs_type, fs_type;
 type sysfs_ss_writable, sysfs_type, rw_fs_type, fs_type;
 type sysfs_gpu_writable, sysfs_type, rw_fs_type, fs_type;
 type sysfs_battery_saver, sysfs_type, rw_fs_type, fs_type;
+# /sys/kernel/mm/vmscan/mem_boost_mode: the camera HAL's memory-boost knob
+# (ExynosCameraInterface MEMBOOST_FILE_PATH). The kernel attribute is created
+# __ATTR(mem_boost_mode, 0644) in kernel/samsung/exynos7885/mm/vmscan.c:2247-2253
+# under mm_kobj with group name "vmscan", so the node is root:root 0644 and the
+# camera provider (user cameraserver) could not write it: HAL logs
+# "ERR(HAL3_camera_device_open[230]):set MEMBOOST fail!!".
+type sysfs_memboost, sysfs_type, rw_fs_type, fs_type;

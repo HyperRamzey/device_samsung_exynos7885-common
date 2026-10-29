@@ -284,17 +284,11 @@ Only the three quirks included above are recognized at this point:
             <Limit name="concurrent-instances" max="16" />
             <Limit name="performance-point-1920x1088" range="60" />
         </MediaCodec>
-        <MediaCodec name="OMX.Exynos.HEVC.Encoder" type="video/hevc" >
-            <Quirk name="requires-allocate-on-input-ports" />
-            <Quirk name="requires-allocate-on-output-ports" />
-            <Limit name="size" min="64x64" max="3840x2160" />
-            <Limit name="alignment" value="2x2" />
-            <Limit name="block-size" value="16x16" />
-            <Limit name="blocks-per-second" min="1" max="972000" />
-            <Limit name="bitrate" range="1-40000000" />
-            <Limit name="concurrent-instances" max="16" />
-            <Limit name="performance-point-3840x2160" value="30" />
-            <Limit name="performance-point-1920x1088" range="120" />
-        </MediaCodec>
+        <!-- derp: OMX.Exynos.HEVC.Encoder removed. AGC (BigKaka)
+             configures it for HDR video and the component returns
+             -61, which tears down the whole camera session (dead
+             viewfinder). Removing it makes AGC fall back to AVC;
+             HEVC recording still works via c2.android.hevc.encoder.
+             See docs/projects/CAMERA.md 8o. -->
     </Encoders>
 </MediaCodecs>

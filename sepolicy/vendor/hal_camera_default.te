@@ -3,6 +3,11 @@ allow hal_camera_default hal_graphics_composer_default:fd use;
 
 rw_file_recursive(hal_camera_default, sysfs_camera)
 
+# HAL3 ExynosCameraInterface::setMemBoost() writes /sys/kernel/mm/vmscan/mem_boost_mode
+# (mode 0644, group cameraserver via rootdir/etc/init.exynos7885.rc). Without this the
+# HAL prints "set MEMBOOST fail!!" on every camera device open.
+allow hal_camera_default sysfs_memboost:file w_file_perms;
+
 get_prop(hal_camera_default, exported_camera_prop)
 set_prop(hal_camera_default, vendor_camera_prop)
 get_prop(hal_camera_default, vendor_factory_prop)

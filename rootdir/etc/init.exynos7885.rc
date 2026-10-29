@@ -18,6 +18,13 @@ on init
     # Fastcharge
     chown system radio /sys/class/sec/switch/afc_disable
 
+    # Camera HAL memory-boost knob: the kernel creates it root:root 0644
+    # (kernel/samsung/exynos7885/mm/vmscan.c MEM_BOOST_ATTR), and the camera provider
+    # runs as user cameraserver, so the HAL's boost write failed with
+    # "set MEMBOOST fail!!" on every camera open. Hand the node to the provider.
+    chown cameraserver cameraserver /sys/kernel/mm/vmscan/mem_boost_mode
+    chmod 0664 /sys/kernel/mm/vmscan/mem_boost_mode
+
     # ZRAM parameters
     write /proc/sys/vm/page-cluster 0
     write /proc/sys/vm/swappiness 100

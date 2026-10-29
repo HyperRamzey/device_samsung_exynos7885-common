@@ -1,5 +1,9 @@
 allow init proc_swappiness:file w_file_perms;
 allow init sysfs_battery_writable:file setattr;
+
+# chown/chmod of the camera HAL memory-boost node in rootdir/etc/init.exynos7885.rc
+# (init needs open+read+setattr for fchmod/fchown, see system/sepolicy comment).
+allow init sysfs_memboost:file { getattr open read setattr write };
 allow init { sec_efs_file efs_file }:dir mounton;
 allow init sysfs_mmc:file w_file_perms;
 allow init socket_device:sock_file create_file_perms;
