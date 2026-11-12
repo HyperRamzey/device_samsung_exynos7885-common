@@ -1,6 +1,17 @@
 # hwc3/gralloc must precede SurfaceFlinger (class core animation), not class hal
+#
+# Early adb is a diagnostic feature and it is now testing-only. The rc keys the USB
+# gadget off sys.usb.config=adb from init at `on boot`, bypassing the UsbService
+# path that normally decides when adb is exposed -- which is what makes a hung
+# system_server diagnosable, and also what would hand an attacker an adb endpoint on
+# a boot nobody has unlocked. Its own header comments are load-bearing about the
+# key-store ordering; read them before moving anything. DERP_TESTING is set by
+# device/samsung/a30s/lineage_a30s_testing.mk before it inherits the device config,
+# and on a release product this file is not in the image at all.
+ifeq ($(DERP_TESTING),1)
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/zzz-early-adb.rc:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/init/zzz-early-adb.rc
+endif
 
 
 #
